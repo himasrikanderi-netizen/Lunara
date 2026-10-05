@@ -1,0 +1,2 @@
+import{describe,expect,it}from"vitest";import{demoRoutes}from"./demo";
+describe("demo route contract",()=>{it("returns the three comparison routes with bounded estimates",()=>{const routes=demoRoutes(50);expect(routes.map(r=>r.label)).toEqual(["Safest","Balanced","Fastest"]);expect(routes.every(r=>r.safety_score>=0&&r.safety_score<=100)).toBe(true);expect(routes.every(r=>r.confidence_score>=0&&r.confidence_score<=100)).toBe(true)});it("keeps confidence distinct from safety",()=>{expect(demoRoutes()[0].confidence_score).not.toBe(demoRoutes()[0].safety_score)})});

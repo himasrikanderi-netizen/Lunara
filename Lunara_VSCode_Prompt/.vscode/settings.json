@@ -1,0 +1,8 @@
+{
+  "files.autoSave": "afterDelay",
+  "editor.wordWrap": "on",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.next": true
+  }
+}
