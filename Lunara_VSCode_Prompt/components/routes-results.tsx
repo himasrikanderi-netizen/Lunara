@@ -41,7 +41,7 @@ export function RoutesResults({ query }: { query: RouteSearch | null }) {
   if (!query) return <div className="container form-page"><div className="card journey-card"><h1>Plan a journey</h1><p className="muted">Enter a starting point and destination to compare routes.</p><Link href="/" className="primary" style={{ display: "grid", placeContent: "center", textDecoration: "none" }}>Go to route search</Link></div></div>;
 
   return <div className="container">
-    <div className="page-head"><div><div className="eyebrow">Route comparison</div><h1>Choose with context</h1><p className="muted">{query.origin} → {query.destination} · {new Date(query.departure_time).toLocaleString()}</p></div><Link href="/" className="secondary" style={{ textDecoration: "none", display: "grid", placeContent: "center" }}>Edit search</Link></div>
+    <div className="page-head"><div><div className="eyebrow">Route comparison</div><h1>Choose with context</h1><p className="muted">{query.origin_label ?? query.origin} → {query.destination_label ?? query.destination} · {new Date(query.departure_time).toLocaleString()}</p></div><Link href="/" className="secondary" style={{ textDecoration: "none", display: "grid", placeContent: "center" }}>Edit search</Link></div>
     {error && <div className="notice" role="alert" style={{ marginBottom: 16 }}><strong>Live route unavailable.</strong> {error} No distance or travel time is shown without a genuine routing-provider response. Check your locations and try again.</div>}
     {isRapidoMode(query.travel_mode) && <div className="notice rapido-notice" role="note"><strong>Route estimated by Lunara. Rapido booking/fare availability is not connected.</strong> No driver availability, pickup ETA, or live Rapido traffic is included. {routes.length > 0 && <div><a className="secondary rapido-book-button" href="https://www.rapido.bike/" target="_blank" rel="noopener noreferrer">Book with Rapido</a><span> Opens the official site; enter pickup and drop-off there. No booking has been made.</span></div>}</div>}
     {!error && routes.length > 0 && <p className="muted" style={{ fontSize: 13 }}>Travel mode: {travelModeLabels[query.travel_mode]}. OSRM estimates do not include live traffic.</p>}
@@ -57,7 +57,7 @@ export function RoutesResults({ query }: { query: RouteSearch | null }) {
       {route.unavailable_factors?.length ? <p className="confidence">Unavailable: {route.unavailable_factors.join(", ")}.</p> : null}
       {selected === route.id && route.geometry.length > 1 && <a className="secondary" href={googleMapsDirections(route.resolved_origin ?? route.geometry[0],route.resolved_destination ?? route.geometry[route.geometry.length-1],query.travel_mode)} target="_blank" rel="noopener noreferrer">Navigate in Google Maps</a>}
       {selected === route.id && <Link href="/journey" className="primary" style={{ textDecoration: "none", display: "grid", placeContent: "center" }} onClick={() => sessionStorage.setItem("lunara-route", JSON.stringify(route))}><Route size={17} /> Start Journey</Link>}
-    </article>)}</div><RouteMap routes={routes} selected={selected} originName={query.origin_label ?? query.origin} destinationName={query.destination} /></div>}
+    </article>)}</div><RouteMap routes={routes} selected={selected} originName={query.origin_label ?? query.origin} destinationName={query.destination_label ?? query.destination} /></div>}
     <div className="notice" style={{ marginTop: 18 }}><Clock size={15} /> Safety estimates are comparative and cannot guarantee personal safety.</div>
   </div>;
 }

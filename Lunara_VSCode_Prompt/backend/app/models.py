@@ -10,6 +10,8 @@ class Category(StrEnum):
     infrastructure_problem="infrastructure_problem"; other_safety_concern="other_safety_concern"
 class Coordinate(BaseModel):
     lat: float = Field(ge=-90, le=90); lng: float = Field(ge=-180, le=180)
+class PlaceSuggestion(BaseModel):
+    name: str; address: str; location: Coordinate
 class TravelMode(StrEnum):
     walking="walking"; driving="driving"; cycling="cycling"
     rapido_bike="rapido_bike"; rapido_auto="rapido_auto"; rapido_cab="rapido_cab"

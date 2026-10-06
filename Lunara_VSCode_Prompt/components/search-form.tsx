@@ -1,106 +1,29 @@
 "use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Bike, CarFront, Clock, Footprints, MapPin, Navigation } from "lucide-react";
-import type { TravelMode } from "@/lib/types";
-import { rapidoModes, standardModes, travelModeLabels } from "@/lib/travel-mode";
-
-function AutoRickshawIcon() {
-  return <svg viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 22h23v-8h-7l-3-7H9l-3 7-1 8Z"/><path d="M7 14h16M12 7v7M21 14v8M5 18h23"/><circle cx="10" cy="24" r="3" fill="var(--card)"/><circle cx="24" cy="24" r="3" fill="var(--card)"/></svg>;
+import {useEffect,useState} from "react";
+import {useRouter} from "next/navigation";
+import {Bike,CarFront,Clock,Footprints,MapPin,Navigation} from "lucide-react";
+import {searchPlaces} from "@/lib/api";
+import {LocationPicker} from "@/components/location-picker";
+import type {Coordinate,PlaceSuggestion,TravelMode} from "@/lib/types";
+import {rapidoModes,standardModes,travelModeLabels} from "@/lib/travel-mode";
+function AutoRickshawIcon(){return <svg viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 22h23v-8h-7l-3-7H9l-3 7-1 8Z"/><path d="M7 14h16M12 7v7M21 14v8M5 18h23"/><circle cx="10" cy="24" r="3" fill="var(--card)"/><circle cx="24" cy="24" r="3" fill="var(--card)"/></svg>}
+function modeIcon(mode:TravelMode){if(mode==="rapido_auto")return <AutoRickshawIcon/>;if(mode==="driving"||mode==="rapido_cab")return <CarFront size={22} aria-hidden/>;if(mode==="walking")return <Footprints size={22} aria-hidden/>;return <Bike size={22} aria-hidden/>}
+function localDateTime(){const date=new Date(Date.now()+15*60_000);return new Date(date.getTime()-date.getTimezoneOffset()*60_000).toISOString().slice(0,16)}
+function currentCoordinates():Promise<Coordinate>{return new Promise((resolve,reject)=>{if(!navigator.geolocation){reject(new Error("Your browser cannot access your location. Type a starting place instead."));return}navigator.geolocation.getCurrentPosition(({coords})=>resolve({lat:coords.latitude,lng:coords.longitude}),error=>reject(new Error(error.code===1?"Location permission was denied. Type a starting place instead.":"Your location could not be found. Type a starting place instead.")),{enableHighAccuracy:false,timeout:10000})})}
+const asText=(point:Coordinate)=>`${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`;
+type FieldProps={id:"from"|"to";label:string;value:string;onChange:(value:string)=>void;onSelect:(place:PlaceSuggestion)=>void;onMap:()=>void;onLocate?:()=>void;busy:boolean;error?:string};
+function LocationField({id,label,value,onChange,onSelect,onMap,onLocate,busy,error}:FieldProps){
+ const [suggestions,setSuggestions]=useState<PlaceSuggestion[]>([]),[loading,setLoading]=useState(false),[searched,setSearched]=useState(false),[active,setActive]=useState(-1),[focused,setFocused]=useState(false);
+ useEffect(()=>{const q=value.trim();if(!focused||q.length<3||q.toLowerCase()==="current location"){return}let live=true;const timer=setTimeout(()=>{void(async()=>{setLoading(true);try{const items=await searchPlaces(q);if(live){setSuggestions(items);setSearched(true);setActive(-1)}}catch{if(live){setSuggestions([]);setSearched(true)}}finally{if(live)setLoading(false)}})()},450);return()=>{live=false;clearTimeout(timer)}},[value,focused]);
+ function choose(place:PlaceSuggestion){onSelect(place);setFocused(false);setSuggestions([]);setSearched(false)}
+ return <div className="field location-field"><label htmlFor={id}>{label}</label><div className="location-input-row"><input id={id} value={value} placeholder={id==="to"?"Where are you going?":"Where are you starting?"} onChange={event=>{onChange(event.target.value);setSuggestions([]);setSearched(false)}} onFocus={()=>setFocused(true)} onBlur={()=>setTimeout(()=>setFocused(false),120)} onKeyDown={event=>{if(event.key==="ArrowDown"&&suggestions.length){event.preventDefault();setActive(index=>(index+1)%suggestions.length)}else if(event.key==="ArrowUp"&&suggestions.length){event.preventDefault();setActive(index=>index<=0?suggestions.length-1:index-1)}else if(event.key==="Enter"&&active>=0&&suggestions[active]){event.preventDefault();choose(suggestions[active])}else if(event.key==="Escape"){setSuggestions([]);setFocused(false)}}} autoComplete="off" required/><button type="button" className="secondary location-icon-button" aria-label={`Choose ${id==="from"?"origin":"destination"} on map`} title={`Choose ${id==="from"?"origin":"destination"} on map`} onClick={onMap}><MapPin size={18}/></button>{onLocate&&<button type="button" className="secondary location-icon-button" aria-label="Use my location" title="Use my location" disabled={busy} onClick={onLocate}><Navigation size={18}/></button>}</div>{error&&<p role="alert" className="muted">{error}</p>}{focused&&value.trim().length>=3&&value.toLowerCase()!=="current location"&&<div className="location-suggestions" role="listbox" aria-label={`${label} suggestions`}>{loading&&<div className="location-suggestion-status">Searching places…</div>}{!loading&&searched&&suggestions.length===0&&<div className="location-suggestion-status">No results found. You can still use the typed address.</div>}{suggestions.map((item,index)=><button type="button" role="option" aria-selected={active===index} className={active===index?"active":""} key={index} onMouseDown={event=>event.preventDefault()} onClick={()=>choose(item)}><strong>{item.name}</strong><small>{item.address}</small></button>)}</div>}</div>
 }
-
-function modeIcon(mode: TravelMode) {
-  if (mode === "rapido_auto") return <AutoRickshawIcon />;
-  if (mode === "driving" || mode === "rapido_cab") return <CarFront size={22} aria-hidden="true" />;
-  if (mode === "walking") return <Footprints size={22} aria-hidden="true" />;
-  return <Bike size={22} aria-hidden="true" />;
-}
-
-function localDateTime() {
-  const date = new Date(Date.now() + 15 * 60_000);
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
-}
-
-function currentCoordinates(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Your browser cannot access your location. Type a starting place instead."));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => resolve(`${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`),
-      error => reject(new Error(error.code === 1
-        ? "Location permission was denied. Type a starting place instead."
-        : "Your location could not be found. Type a starting place instead.")),
-      { enableHighAccuracy: false, timeout: 10000 },
-    );
-  });
-}
-
-export function SearchForm() {
-  const router = useRouter();
-  const [from, setFrom] = useState("Current location");
-  const [to, setTo] = useState("");
-  const [time, setTime] = useState(localDateTime);
-  const [preference, setPreference] = useState(50);
-  const [travelMode, setTravelMode] = useState<TravelMode>("driving");
-  const [busy, setBusy] = useState(false);
-  const [locationError, setLocationError] = useState("");
-  const [currentLocationValue, setCurrentLocationValue] = useState("");
-
-  async function locate() {
-    setLocationError("");
-    setBusy(true);
-    try {
-      const coordinates = await currentCoordinates();
-      setCurrentLocationValue(coordinates);
-      setFrom(coordinates);
-    } catch (error) {
-      setLocationError((error as Error).message);
-      setFrom("");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const departure = new Date(time);
-    if (Number.isNaN(departure.getTime())) return;
-    setLocationError("");
-    setBusy(true);
-    try {
-      const usingCurrentLocation = from.trim().toLowerCase() === "current location" || Boolean(currentLocationValue && from.trim() === currentLocationValue);
-      const origin = from.trim().toLowerCase() === "current location" ? await currentCoordinates() : from.trim();
-      const params = new URLSearchParams({
-        origin,
-        ...(usingCurrentLocation ? { origin_label: "My Current Location" } : {}),
-        destination: to.trim(),
-        departure_time: departure.toISOString(),
-        preference: String(preference),
-        travel_mode: travelMode,
-      });
-      router.push(`/routes?${params.toString()}`);
-    } catch (error) {
-      setLocationError((error as Error).message);
-      setFrom("");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return <form className="search-card" onSubmit={submit}>
-    <div className="field"><label htmlFor="from">From</label><div style={{ display: "flex", gap: 8 }}><input id="from" value={from} onChange={event => { setFrom(event.target.value); setCurrentLocationValue(""); setLocationError(""); }} required /><button type="button" className="secondary" aria-label="Use my location" disabled={busy} onClick={locate}><Navigation size={18} /></button></div>{locationError && <p role="alert" className="muted">{locationError}</p>}</div>
-    <div className="field"><label htmlFor="to">To</label><input id="to" value={to} placeholder="Where are you going?" onChange={event => setTo(event.target.value)} required /></div>
-    <div className="field"><label htmlFor="time"><Clock size={13} /> Travel time</label><input id="time" type="datetime-local" value={time} onChange={event => setTime(event.target.value)} required /></div>
-    <fieldset className="travel-mode-field"><legend>Travel mode</legend>
-      <div className="mode-section-label">YOUR OWN ROUTE</div>
-      <div className="travel-mode-options">{standardModes.map(mode => <label key={mode} className={`travel-mode-choice ${travelMode === mode ? "active" : ""}`}><input type="radio" name="travel-mode" value={mode} checked={travelMode === mode} onChange={() => setTravelMode(mode)} /><span className="travel-mode-icon">{modeIcon(mode)}</span><span>{travelModeLabels[mode]}</span></label>)}</div>
-      <div className="mode-section-label rapido-section-label">RAPIDO</div>
-      <div className="travel-mode-options">{rapidoModes.map(mode => <label key={mode} className={`travel-mode-choice ${travelMode === mode ? "active" : ""}`}><input type="radio" name="travel-mode" value={mode} checked={travelMode === mode} onChange={() => setTravelMode(mode)} /><span className="travel-mode-icon">{modeIcon(mode)}</span><span>{travelModeLabels[mode]}</span></label>)}</div>
-    </fieldset>
-    <div className="field"><label htmlFor="preference">Route preference</label><input className="range" id="preference" type="range" min="0" max="100" value={preference} onChange={event => setPreference(Number(event.target.value))} /><div className="range-labels"><span>Safest</span><span>Balanced</span><span>Fastest</span></div></div>
-    <button className="primary" disabled={busy}><MapPin size={17} style={{ verticalAlign: "middle", marginRight: 7 }} />Find My Route</button>
-  </form>;
+export function SearchForm(){
+ const router=useRouter();
+ const [from,setFrom]=useState("Current location"),[to,setTo]=useState(""),[fromCoord,setFromCoord]=useState<Coordinate|null>(null),[toCoord,setToCoord]=useState<Coordinate|null>(null),[fromLabel,setFromLabel]=useState("My Current Location"),[toLabel,setToLabel]=useState(""),[picker,setPicker]=useState<"origin"|"destination"|null>(null);
+ const [time,setTime]=useState(localDateTime),[preference,setPreference]=useState(50),[travelMode,setTravelMode]=useState<TravelMode>("driving"),[busy,setBusy]=useState(false),[locationError,setLocationError]=useState("");
+ async function locate(){setLocationError("");setBusy(true);try{const point=await currentCoordinates();setFromCoord(point);setFromLabel("My Current Location");setFrom("Current location")}catch(error){setLocationError((error as Error).message);setFrom("");setFromCoord(null)}finally{setBusy(false)}}
+ function selectPlace(kind:"origin"|"destination",place:PlaceSuggestion){if(kind==="origin"){setFrom(place.name);setFromLabel(place.name);setFromCoord(place.location)}else{setTo(place.name);setToLabel(place.name);setToCoord(place.location)}setPicker(null)}
+ async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();const departure=new Date(time);if(Number.isNaN(departure.getTime()))return;setLocationError("");setBusy(true);try{const current=from.trim().toLowerCase()==="current location";const originPoint=current?(fromCoord??await currentCoordinates()):fromCoord;const origin=originPoint?asText(originPoint):from.trim();const destination=toCoord?asText(toCoord):to.trim();const params=new URLSearchParams({origin,...(originPoint?{origin_label:current?"My Current Location":fromLabel}:{}),destination,...(toCoord?{destination_label:toLabel}:{}),departure_time:departure.toISOString(),preference:String(preference),travel_mode:travelMode});router.push(`/routes?${params.toString()}`)}catch(error){setLocationError((error as Error).message);setFrom("");setFromCoord(null)}finally{setBusy(false)}}
+ return <><form className="search-card" onSubmit={submit}><LocationField id="from" label="From" value={from} onChange={value=>{setFrom(value);setFromCoord(null);setFromLabel(value);setLocationError("")}} onSelect={place=>selectPlace("origin",place)} onMap={()=>setPicker("origin")} onLocate={()=>void locate()} busy={busy} error={locationError}/><LocationField id="to" label="To" value={to} onChange={value=>{setTo(value);setToCoord(null);setToLabel(value)}} onSelect={place=>selectPlace("destination",place)} onMap={()=>setPicker("destination")} busy={busy}/><div className="field"><label htmlFor="time"><Clock size={13}/> Travel time</label><input id="time" type="datetime-local" value={time} onChange={event=>setTime(event.target.value)} required/></div><fieldset className="travel-mode-field"><legend>Travel mode</legend><div className="mode-section-label">YOUR OWN ROUTE</div><div className="travel-mode-options">{standardModes.map(mode=><label key={mode} className={`travel-mode-choice ${travelMode===mode?"active":""}`}><input type="radio" name="travel-mode" value={mode} checked={travelMode===mode} onChange={()=>setTravelMode(mode)}/><span className="travel-mode-icon">{modeIcon(mode)}</span><span>{travelModeLabels[mode]}</span></label>)}</div><div className="mode-section-label rapido-section-label">RAPIDO</div><div className="travel-mode-options">{rapidoModes.map(mode=><label key={mode} className={`travel-mode-choice ${travelMode===mode?"active":""}`}><input type="radio" name="travel-mode" value={mode} checked={travelMode===mode} onChange={()=>setTravelMode(mode)}/><span className="travel-mode-icon">{modeIcon(mode)}</span><span>{travelModeLabels[mode]}</span></label>)}</div></fieldset><div className="field"><label htmlFor="preference">Route preference</label><input className="range" id="preference" type="range" min="0" max="100" value={preference} onChange={event=>setPreference(Number(event.target.value))}/><div className="range-labels"><span>Safest</span><span>Balanced</span><span>Fastest</span></div></div><button className="primary" disabled={busy}><MapPin size={17} style={{verticalAlign:"middle",marginRight:7}}/>Find My Route</button></form>{picker&&<LocationPicker kind={picker} initial={picker==="origin"?fromCoord:toCoord} onClose={()=>setPicker(null)} onSelect={place=>selectPlace(picker,place)}/>}</>
 }

@@ -22,8 +22,9 @@ export default async function RoutesPage({ searchParams }: { searchParams: Promi
     const preference = Number(rawPreference ?? 50);
     if (!Number.isNaN(date.getTime())) query = {
       origin,
-      origin_label: value(params, "origin_label") === "My Current Location" ? "My Current Location" : undefined,
+      origin_label: value(params, "origin_label")?.slice(0,160),
       destination,
+      destination_label: value(params, "destination_label")?.slice(0,160),
       departure_time: date.toISOString(),
       preference: Number.isFinite(preference) ? Math.max(0, Math.min(100, preference)) : 50,
       travel_mode: rawMode && rawMode in travelModeLabels ? rawMode as TravelMode : "driving",

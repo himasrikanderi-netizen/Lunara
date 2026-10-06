@@ -1,4 +1,4 @@
-import type { Report, RouteOption, RouteSearch, SafePlaceResults, Coordinate } from "./types";
+import type { Report, RouteOption, RouteSearch, SafePlaceResults, Coordinate, PlaceSuggestion } from "./types";
 
 const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -40,3 +40,5 @@ export function fetchSafePlaces(location:Coordinate,category:"hospital"|"police"
   const params=new URLSearchParams({lat:String(location.lat),lng:String(location.lng),category,radius_m:"5000"});
   return request<SafePlaceResults>(`/api/v1/safe-places/nearby?${params}`);
 }
+export function searchPlaces(query:string){return request<PlaceSuggestion[]>(`/api/v1/places/search?q=${encodeURIComponent(query)}`)}
+export function reversePlace(point:Coordinate){return request<PlaceSuggestion>(`/api/v1/places/reverse?lat=${point.lat}&lng=${point.lng}`)}

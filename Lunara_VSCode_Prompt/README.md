@@ -9,7 +9,7 @@ Run `npm install` and `npm run dev` for the frontend. In `backend/`, install `re
 ## Available features
 
 - Driving, walking, and cycling via the corresponding OSRM road graph. Rapido Bike, Auto, and Cab retain their labels but use the car-road graph. This is not a Rapido quote, pickup estimate, availability check, or booking. The official Rapido site link does not prefill a trip.
-- Current-location or typed origin, Nominatim place geocoding, live route distance/duration/geometry, and interactive MapLibre route map. OSRM does not include live traffic. Route failures show no invented distance or duration.
+- Current-location, typed, autocomplete, or in-app MapLibre map selection for both endpoints. Nominatim provides place search and reverse geocoding; chosen map coordinates go directly to routing while readable names remain in the UI. Live OSRM distance, duration, and geometry exclude traffic. Route failures show no invented results.
 - Deterministic safety baseline using mapped road context. Incident, lighting, activity, and verified report factors are explicitly unavailable. Confidence is conservative.
 - Nearby hospital, police, and transport searches using bounded OpenStreetMap queries. Results may be incomplete; opening hours and staffing are unknown.
 - Trusted contacts with phone numbers stored only in the current browser. A 30-minute check-in timer persists its deadline locally and can be reset or cancelled. It is a foreground reminder, not automatic emergency notification.

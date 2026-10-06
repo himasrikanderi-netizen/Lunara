@@ -1,8 +1,9 @@
 export type Coordinate={lat:number;lng:number};
+export type PlaceSuggestion={name:string;address:string;location:Coordinate};
 export type TravelMode="walking"|"driving"|"cycling"|"rapido_bike"|"rapido_auto"|"rapido_cab";
 export type RoutingProfile="walking"|"driving"|"cycling";
 export type RouteOption={id:string;label:"Safest"|"Balanced"|"Fastest";duration_minutes:number;distance_km:number;safety_score:number;confidence_score:number;confidence_label:string;summary:string;factors:string[];geometry:Coordinate[];risk_segments:{from:Coordinate;to:Coordinate;level:"lower"|"caution"|"elevated"}[];geometry_source?:string;travel_mode?:TravelMode;routing_profile?:RoutingProfile;resolved_origin?:Coordinate;resolved_destination?:Coordinate;traffic_included?:boolean;data_sources?:string[];unavailable_factors?:string[]};
-export type RouteSearch={origin:string;origin_label?:string;destination:string;departure_time:string;preference:number;travel_mode:TravelMode;preferences?:string[]};
+export type RouteSearch={origin:string;origin_label?:string;destination:string;destination_label?:string;departure_time:string;preference:number;travel_mode:TravelMode;preferences?:string[]};
 export type Report={id:string;category:string;severity:number;description?:string;latitude:number;longitude:number;occurred_at:string;status:string;reliability_score:number};
 export type SafePlace={id:string;category:"hospital"|"police"|"transport";name:string;location:Coordinate;distance_m:number;osm_url:string};
 export type SafePlaceResults={places:SafePlace[];data_status:string;source:string};

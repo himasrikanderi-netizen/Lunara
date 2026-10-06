@@ -4,7 +4,7 @@ from fastapi import FastAPI,HTTPException,Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import get_settings
-from app.models import JourneyCreate,Report,ReportCreate,RouteOption,RouteSearch,VerificationCreate,SafePlaceResults
+from app.models import JourneyCreate,Report,ReportCreate,RouteOption,RouteSearch,VerificationCreate,SafePlaceResults,Coordinate,PlaceSuggestion
 from app.services.reports import ReportService
 from app.services.routing import RoutingService
 from app.services.providers import ProviderError
@@ -12,6 +12,7 @@ from app.services.safe_places import SafePlaceService
 
 logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s",level=logging.INFO)
 log=logging.getLogger("lunara");settings=get_settings();routing=RoutingService(settings);reports=ReportService();safe_place_search=SafePlaceService(settings)
+place_search=routing.geocoder
 @asynccontextmanager
 async def lifespan(_:FastAPI):log.info("Lunara API started environment=%s",settings.environment);yield;log.info("Lunara API stopped")
 app=FastAPI(title=settings.app_name,version="0.1.0",lifespan=lifespan,docs_url="/docs" if settings.environment!="production" else None)
@@ -23,6 +24,14 @@ async def request_log(request:Request,call_next):
 async def invalid(_:Request,exc:ValueError):return JSONResponse(status_code=422,content={"detail":str(exc)})
 @app.get("/health")
 def health():return {"status":"ok","service":"lunara-api"}
+@app.get("/api/v1/places/search",response_model=list[PlaceSuggestion])
+def search_places(q:str):
+    try:return place_search.search(q)
+    except ProviderError as exc:raise HTTPException(503,str(exc)) from exc
+@app.get("/api/v1/places/reverse",response_model=PlaceSuggestion)
+def reverse_place(lat:float,lng:float):
+    try:return place_search.reverse(Coordinate(lat=lat,lng=lng))
+    except ProviderError as exc:raise HTTPException(503,str(exc)) from exc
 @app.post("/api/v1/routes/search",response_model=list[RouteOption])
 def route_search(query:RouteSearch):
     try:
